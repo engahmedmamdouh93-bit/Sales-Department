@@ -1,0 +1,56 @@
+{
+  "name": "sales-department",
+  "version": "0.7.0",
+  "description": "One Director runs the sales process through sub-agents and asks you only for the key approvals.",
+  "main": "electron/main.js",
+  "author": "Your Name",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.0"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.0"
+  },
+  "build": {
+    "appId": "com.salesagents.department",
+    "productName": "Sales Agents Department",
+    "artifactName": "Sales-Department-Setup-${version}.${ext}",
+    "files": [
+      "electron/**",
+      "app/**",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "engahmedmamdouh93-bit",
+        "repo": "Sales-Department",
+        "releaseType": "release"
+      }
+    ]
+  }
+}
