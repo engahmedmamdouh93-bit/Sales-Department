@@ -787,7 +787,7 @@ if(ev.key==="/"&&!typing){var b=cb();if(b&&b.stage==="live"){ev.preventDefault()
 try{if(window.matchMedia)matchMedia("(prefers-color-scheme: dark)").addEventListener("change",function(){if(DB.set.th==="auto")applyLook()})}catch(e){}
 
 /* ================= Phase A: brain files, reports, tests, usage guard ================= */
-APP_VERSION="0.8.0";
+APP_VERSION="0.9.0";var UI_VERSION="0.9.0",CONTENT=null,CTMSG="";
 var BRF={},BRADD=false,BRO="",BRT="",REPID=0,BRCALL="",RPTBUSY="",RPTERR="",TESTBUSY=false,TESTERR="",DEFSET2={wk:300000,bb:1,eco:true},BRCAP=[4000,9000,16000];
 var BUILTIN=[
 {id:"bi-principles",title:"Operating principles and guardrails",type:"rules",load:"always",tags:["principles","guardrails"],sum:"Six principles, what needs owner approval, what is never allowed, when to escalate",text:`PRINCIPLES (in priority order)
@@ -958,7 +958,16 @@ document.addEventListener("input",function(ev){var t=ev.target;if(!t.getAttribut
 document.addEventListener("change",function(ev){var t=ev.target;if(t.id==="bf_file"&&t.files&&t.files[0]){var f=t.files[0],r=new FileReader();r.onload=function(){BRF.text=String(r.result||"").slice(0,80000);if(!BRF.title)BRF.title=f.name.replace(/\.[^.]+$/,"");renderView()};r.onerror=function(){BRF.msg="The file could not be read. Paste the text instead.";renderView()};r.readAsText(f)}});
 /* ---------- boot ---------- */
 (function(){try{var st=document.createElement("style");st.textContent=".bfile{margin:14px 0 22px}.bfile.off{opacity:.55}";document.head.appendChild(st)}catch(e){}})();
-function brainBoot(){DB.set=Object.assign({},DEFSET2,DB.set||{});DB.use=DB.use||{days:{},tasks:{}};DB.brain=DB.brain||[];BUILTIN.forEach(function(f){if(!DB.brain.some(function(x){return x.id===f.id}))DB.brain.push({id:f.id,title:f.title,type:f.type,scope:"all",load:f.load,tags:f.tags,sum:f.sum,text:f.text,on:true,v:1,src:"built-in",ts:Date.now(),hist:[]})});save();
+function contentCardH(){var d=!!(window.sd&&window.sd.contentInfo),S=DB.set;return scard("Interface updates (from GitHub, like Atlas)",srow("Interface version","<b>v"+UI_VERSION+"</b>"+(CONTENT?" · "+esc(CONTENT.source):""),"The installed app loads app/index.html from your repository. Upload a new file there and the new interface appears here, with no new installer.")+(d?srow("Check GitHub now",'<button class="b s" type="button" data-a="ctchk">Check now</button>')+(CONTENT&&CONTENT.pending?srow("A new interface is ready",'<button class="b s p" type="button" data-a="ctreload">Reload to apply</button>',"v"+esc(CONTENT.pendingVersion||"")):"")+srow("Check when the app opens",tgl("autoContent",S.autoContent!==false))+srow("Go back to the built-in interface",'<button class="b s" type="button" data-a="ctrevert">Go back</button>',"Use this if a new interface misbehaves."):'<p class="m2" style="margin:0">Available in the installed app.</p>')+(CTMSG?'<p class="m2" role="status" style="margin:10px 0 0">'+esc(CTMSG)+"</p>":""))}
+var _sb3=stgBody;stgBody=function(c){var h=_sb3(c);return c==="Updates"?h+contentCardH():h};
+function ctNote(v){var b=cb()||DB.list[0];if(b)addN(b,"amber","A new interface"+(v?" v"+v:"")+" was downloaded from GitHub. Open Settings, Updates, then press Reload to apply.","home")}
+function ctBoot(){if(!(window.sd&&window.sd.contentInfo)||window.__ct)return;window.__ct=1;window.sd.contentInfo().then(function(i){CONTENT=i;if(i.pending)ctNote(i.pendingVersion)});if(window.sd.onContent)window.sd.onContent(function(i){window.sd.contentInfo().then(function(x){CONTENT=x;ctNote(i&&i.version);if(STGO)renderStg()})})}
+document.addEventListener("click",function(ev){var t=ev.target.closest("[data-a]");if(!t||!window.sd)return;var a=t.getAttribute("data-a");
+if(a==="ctchk"){CTMSG="Checking GitHub…";renderStg();window.sd.checkContent().then(function(r){CTMSG=!r.ok?"Could not check: "+r.error:r.updated?"A new interface v"+r.version+" was downloaded. Press Reload to apply.":"The interface is already up to date.";return window.sd.contentInfo()}).then(function(i){CONTENT=i;renderStg()}).catch(function(e){CTMSG="Could not check: "+String((e&&e.message)||e).slice(0,120);renderStg()})}
+else if(a==="ctreload"){window.sd.reloadContent()}
+else if(a==="ctrevert"){CTMSG="Going back to the built-in interface…";renderStg();window.sd.revertContent()}});
+document.addEventListener("change",function(ev){var t=ev.target;if(t.getAttribute&&t.getAttribute("data-set")==="autoContent"&&window.sd&&window.sd.setConfig)window.sd.setConfig({autoContent:t.checked})});
+function brainBoot(){ctBoot();DB.set=Object.assign({},DEFSET2,DB.set||{});DB.use=DB.use||{days:{},tasks:{}};DB.brain=DB.brain||[];BUILTIN.forEach(function(f){if(!DB.brain.some(function(x){return x.id===f.id}))DB.brain.push({id:f.id,title:f.title,type:f.type,scope:"all",load:f.load,tags:f.tags,sum:f.sum,text:f.text,on:true,v:1,src:"built-in",ts:Date.now(),hist:[]})});save();
 if(window.sd&&DB.set.chk&&!window.__chk){window.__chk=1;setTimeout(function(){try{if(window.sd.setRepo)window.sd.setRepo(DB.set.gh,DB.set.chan);window.sd.checkUpdate().then(function(r){UPD=r;LASTCHK=Date.now();var b=cb();if(r.available&&b&&!DB.nf.some(function(n){return !n.done&&/Update available/.test(n.t)}))addN(b,"amber","Update available: v"+r.version+". Open Settings, Updates, then press Update now.","home")}).catch(function(){})}catch(e){}},5000)}}
 
 load();permInit();brainBoot();
