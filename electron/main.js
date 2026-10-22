@@ -5,10 +5,13 @@ const os = require('os');
 const { spawn, execFile } = require('child_process');
 const { autoUpdater } = require('electron-updater');
 const pkg = require('../package.json');
+const { createContent } = require('./content');
 
 const PLACEHOLDER = 'your-account/sales-agents-department';
-const DEFAULTS = { cm: 'cli', model: 'claude-sonnet-5-5', repo: '', channel: 'stable' };
+const DEFAULTS = { cm: 'cli', model: 'claude-sonnet-5-5', repo: '', channel: 'stable', autoContent: true };
+const BUNDLED = path.join(__dirname, '..', 'app', 'index.html');
 let win;
+let content;
 
 const dataDir = () => app.getPath('userData');
 const cfgFile = () => path.join(dataDir(), 'config.json');
@@ -21,6 +24,25 @@ function readKey() { try { return safeStorage.decryptString(fs.readFileSync(keyF
 function bakedRepo() {
   const p = (pkg.build && pkg.build.publish && pkg.build.publish[0]) || {};
   return p.owner && p.repo && p.owner !== 'YOUR-GITHUB-USER' ? p.owner + '/' + p.repo : '';
+}
+
+async function fetchRemote() {
+  const repo = readCfg().repo || bakedRepo();
+  if (!repo || repo === PLACEHOLDER) throw new Error('No GitHub repository is set. Set it in Settings, Updates.');
+  const r = await fetch('https://api.github.com/repos/' + repo + '/contents/app/index.html?ref=main', {
+    headers: { Accept: 'application/vnd.github.raw', 'User-Agent': 'SalesDepartment' },
+    signal: AbortSignal.timeout(20000)
+  });
+  if (!r.ok) throw new Error('GitHub answered ' + r.status + (r.status === 403 ? ' (too many checks, try again later)' : ''));
+  return await r.text();
+}
+async function runCheck() {
+  try {
+    const r = await content.check();
+    log('content check ' + JSON.stringify(r));
+    if (r.updated && win && !win.isDestroyed()) win.webContents.send('content:ready', { version: r.version });
+    return r;
+  } catch (e) { log('content check failed ' + e.message); return { ok: false, error: e.message }; }
 }
 
 /* ---------- find Claude Code on Windows (a desktop app does not always see your terminal PATH) ---------- */
@@ -100,7 +122,11 @@ ipcMain.handle('status', async () => {
   } catch (e) { return { ok: false, detail: e.message }; }
 });
 ipcMain.handle('brain', async (e, prompt) => { const c = readCfg(); return c.cm === 'key' ? runApi(prompt, c) : runClaude(prompt, ['-p', '--output-format', 'text']); });
-ipcMain.handle('setConfig', (e, c) => { const cur = readCfg(); if (c && (c.cm === 'cli' || c.cm === 'key')) cur.cm = c.cm; if (c && c.model) cur.model = String(c.model).slice(0, 80); writeCfg(cur); return true; });
+ipcMain.handle('contentInfo', () => ({ ...content.info(), repo: readCfg().repo || bakedRepo() }));
+ipcMain.handle('contentCheck', () => runCheck());
+ipcMain.handle('contentReload', () => { if (win) win.loadFile(content.currentPath()); return true; });
+ipcMain.handle('contentRevert', () => { content.revert(); if (win) win.loadFile(BUNDLED); return true; });
+ipcMain.handle('setConfig', (e, c) => { const cur = readCfg(); if (c && typeof c.autoContent === 'boolean') cur.autoContent = c.autoContent; if (c && (c.cm === 'cli' || c.cm === 'key')) cur.cm = c.cm; if (c && c.model) cur.model = String(c.model).slice(0, 80); writeCfg(cur); return true; });
 ipcMain.handle('setKey', (e, k) => {
   if (!safeStorage.isEncryptionAvailable()) throw new Error('Secure storage is not available on this computer.');
   fs.mkdirSync(dataDir(), { recursive: true });
@@ -134,7 +160,14 @@ function createWindow() {
     backgroundColor: '#070D10', title: 'Sales Agents Department',
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false }
   });
-  win.loadFile(path.join(__dirname, '..', 'app', 'index.html'));
+  win.loadFile(content.currentPath());
+  win.webContents.on('did-finish-load', () => content.applied());
+  win.webContents.on('did-fail-load', (e, code, desc, url, isMain) => {
+    if (isMain && content.currentPath() !== BUNDLED) { log('downloaded interface failed to load, going back to the built-in one'); content.revert(); win.loadFile(BUNDLED); }
+  });
+  win.webContents.on('render-process-gone', () => {
+    if (content.currentPath() !== BUNDLED) { log('downloaded interface crashed, going back to the built-in one'); content.revert(); win.loadFile(BUNDLED); }
+  });
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^https:\/\//.test(url)) shell.openExternal(url); return { action: 'deny' }; });
 }
 app.whenReady().then(() => {
@@ -142,7 +175,9 @@ app.whenReady().then(() => {
   session.defaultSession.setPermissionRequestHandler((wc, perm, cb) => cb(['media', 'notifications'].includes(perm)));
   const c = readCfg(); setFeed(c.repo || bakedRepo(), c.channel);
   log('started v' + app.getVersion());
+  content = createContent({ dataDir: dataDir(), bundledPath: BUNDLED, fetchText: fetchRemote, log });
   createWindow();
+  if (readCfg().autoContent !== false) setTimeout(() => runCheck(), 6000);
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
