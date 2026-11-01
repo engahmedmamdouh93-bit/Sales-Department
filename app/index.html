@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
+<meta name="ui-version" content="1.0.1">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Sales Agents Department</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=JetBrains+Mono:wght@400;500&family=Rajdhani:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap">
@@ -239,6 +240,8 @@ body.hud{padding-bottom:0}
 .h-srow .h-sel{max-width:230px}.h-srow .c{min-width:0}
 </style></head><body><div id="root"></div><div class="toast" id="toast" hidden></div>
 <script>
+var UI_VERSION="1.0.1",CONTENT=null,CTMSG="";
+
 var VER="sad-hud2-v1";
 function $(s){return document.querySelector(s)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
@@ -1153,7 +1156,7 @@ function hudAct(k,el){var b=B();if(pAct(k,el))return true;if(setAct(k,el))return
 function hudChange(t,d,b){if(pChange(t,d,b))return true;if(setChange(t,d,b))return true;if(d.chg==="pg"){if(t.value){ui.page=t.value;render()}return true}if(d.chg==="topic"){ui.thread=t.value;render();return true}return false}
 /* ---------- Step 3: Settings with the v0.9.0 content, restyled; Pipeline board; checks toggle ---------- */
 var SETD={lang:"English",cad:"1 week",cm:"cli",model:"claude-sonnet-5-5",gh:"engahmedmamdouh93-bit/Sales-Department",chan:"stable",chk:true,amber:true,cdark:0,cblur:0,cbT:70,speak:false,vlang:"auto",auto:0,sound:true,esc:0,th:"dark",acc:"#FFA31A",fs:100,rm:true,wk:300000,bb:"1",eco:true,autoContent:true,nav:"auto",ch:{email:{on:false,addr:"",method:"connector",mode:"hand"},linkedin:{on:false,addr:"",method:"hand",mode:"hand"},whatsapp:{on:false,addr:"",method:"link",mode:"hand"}}};
-var APP_VERSION="0.9.1",UI_VERSION="1.0.0",CAD=["3 days","1 week","2 weeks","monthly"],ACC2=["#FFA31A","#FFC970","#E8590C","#D1213D"];
+var APP_VERSION="0.9.1",CAD=["3 days","1 week","2 weeks","monthly"],ACC2=["#FFA31A","#FFC970","#E8590C","#D1213D"];
 var CATS2=[["General","cog","director language review cadence version mode"],["Connections","link","claude github repository channels email connect api key"],["Updates","refresh","version update github release rollback channel"],["Director and agents","compass","agent rules workflow amber approval pages autonomy"],["Chat and voice","mic","chat darkness blur transparency voice speak language questions auto pick"],["Notifications","bell","sound alert escalate computer notifications"],["Appearance","palette","theme night day auto accent color text size motion"],["Budget and safety","shield","budget limits allowance sending held red daily"],["Usage guard","shield","usage tokens budget limit weekly economy brain"],["Data and backup","db","export import backup storage clear"],["Shortcuts","kbd","keyboard keys shortcut"],["About and help","info","version about help prototype"]];
 var SIC={cog:HIC.j,link:'<path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/>',refresh:'<path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 4v7h-7"/>',compass:AGI.Director,mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>',bell:'<path d="M6 16V11a6 6 0 0112 0v5l2 2H4z"/><path d="M10 21h4"/>',palette:'<path d="M12 3a9 9 0 100 18c1.5 0 2-1 1.5-2s0-2 1.5-2h2a3 3 0 003-3A9 9 0 0012 3z"/><circle cx="8" cy="11" r="1"/><circle cx="12" cy="8" r="1"/><circle cx="16" cy="11" r="1"/>',shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',db:'<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',kbd:'<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',search:'<circle cx="11" cy="11" r="6"/><path d="M16 16l5 5"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>'};
 var sUI={cat:"General",q:"",bmode:"desktop",chk:"",conn:"",imp:false,exp:"",ct:""};
